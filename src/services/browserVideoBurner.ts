@@ -1,5 +1,8 @@
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import type { Caption_Style } from '../types/captionStyle';
+
+// FFmpeg is removed for web build compatibility
+// WebM to MP4 conversion is disabled for now
+// import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
 interface BurnOptions {
   filename?: string;
@@ -175,8 +178,11 @@ export function downloadBurnedVideo(result: BurnResult): void {
 /**
  * Convert a WebM Blob to MP4 using ffmpeg.wasm client‑side.
  * Returns a new Blob and a URL for download.
+ * DISABLED: FFmpeg removed for web build compatibility
  */
 export async function convertWebMToMP4(inputBlob: Blob): Promise<{ blob: Blob; url: string }> {
+  throw new Error('WebM to MP4 conversion is disabled. Use the WebM format directly.');
+  /*
   const ffmpeg = createFFmpeg({ log: true });
   if (!ffmpeg.isLoaded()) {
     await ffmpeg.load();
@@ -194,6 +200,7 @@ export async function convertWebMToMP4(inputBlob: Blob): Promise<{ blob: Blob; u
   ffmpeg.FS('unlink', 'input.webm');
   ffmpeg.FS('unlink', 'output.mp4');
   return { blob: mp4Blob, url };
+  */
 }
 
 function toPlayableUrl(url: string): string {
