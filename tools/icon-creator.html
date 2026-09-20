@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS PWA Icon Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="file"],
+        input[type="color"],
+        input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+        
+        .preview-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .preview-box {
+            text-align: center;
+        }
+        
+        .preview-box canvas {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .preview-label {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #4f46e5;
+        }
+        
+        .info {
+            background: #e0e7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #4338ca;
+        }
+        
+        .warning {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍎 iOS PWA Icon Creator</h1>
+        <p class="subtitle">Create perfect icons for your iOS Progressive Web App</p>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> iOS requires icons with solid backgrounds (no transparency) and no padding for best results.
+        </div>
+        
+        <div class="section">
+            <label>1. Upload Your Logo/Icon</label>
+            <input type="file" id="logoInput" accept="image/*">
+        </div>
+        
+        <div class="section">
+            <label>2. Choose Background Color</label>
+            <input type="color" id="bgColor" value="#6366f1">
+        </div>
+        
+        <div class="section">
+            <label>3. Adjust Logo Size (% of canvas)</label>
+            <input type="range" id="logoSize" min="60" max="95" value="85">
+            <span id="sizeValue">85%</span>
+        </div>
+        
+        <div class="info">
+            <strong>💡 Tips:</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Use your brand color as background</li>
+                <li>Make logo fill 80-90% of canvas</li>
+                <li>Ensure high contrast between logo and background</li>
+                <li>Test on actual iOS device</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h3>Preview</h3>
+            <div class="preview-container">
+                <div class="preview-box">
+                    <canvas id="preview180" width="180" height="180"></canvas>
+                    <div class="preview-label">180x180 (iPhone)</div>
+                </div>
+                <div class="preview-box">
+                    <canvas id="preview152" width="152" height="152"></canvas>
+                    <div class="preview-label">152x152 (iPad)</div>
+                </div>
+                <div class="preview-box">
+                    <canvas id="preview120" width="120" height="120"></canvas>
+                    <div class="preview-label">120x120 (iPhone)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <button onclick="downloadIcon(180)">Download 180x180</button>
+            <button onclick="downloadIcon(152)">Download 152x152</button>
+            <button onclick="downloadIcon(120)">Download 120x120</button>
+            <button onclick="downloadAll()">Download All</button>
+        </div>
+    </div>
+    
+    <script>
+        let logoImage = null;
+        
+        document.getElementById('logoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    logoImage = new Image();
+                    logoImage.onload = function() {
+                        updatePreviews();
+                    };
+                    logoImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('bgColor').addEventListener('input', updatePreviews);
+        document.getElementById('logoSize').addEventListener('input', function() {
+            document.getElementById('sizeValue').textContent = this.value + '%';
+            updatePreviews();
+        });
+        
+        function updatePreviews() {
+            if (!logoImage) return;
+            
+            const bgColor = document.getElementById('bgColor').value;
+            const logoSize = document.getElementById('logoSize').value / 100;
+            
+            drawIcon('preview180', 180, bgColor, logoSize);
+            drawIcon('preview152', 152, bgColor, logoSize);
+            drawIcon('preview120', 120, bgColor, logoSize);
+        }
+        
+        function drawIcon(canvasId, size, bgColor, logoSize) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Enable high-quality rendering
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculate logo dimensions
+            const logoDisplaySize = size * logoSize;
+            const x = (size - logoDisplaySize) / 2;
+            const y = (size - logoDisplaySize) / 2;
+            
+            // Draw logo with high quality
+            ctx.drawImage(logoImage, x, y, logoDisplaySize, logoDisplaySize);
+        }
+        
+        function downloadIcon(size) {
+            if (!logoImage) {
+                alert('Please upload a logo first!');
+                return;
+            }
+            
+            // Create canvas at EXACT target size - no scaling to avoid quality loss
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d', {
+                alpha: true,
+                desynchronized: false,
+                colorSpace: 'srgb',
+                willReadFrequently: false
+            });
+            
+            // Disable smoothing for pixel-perfect rendering from high-res source
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            const bgColor = document.getElementById('bgColor').value;
+            const logoSize = document.getElementById('logoSize').value / 100;
+            
+            // Draw background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculate logo dimensions
+            const logoDisplaySize = size * logoSize;
+            const x = (size - logoDisplaySize) / 2;
+            const y = (size - logoDisplaySize) / 2;
+            
+            // Draw logo directly at target size from original high-res image
+            // This preserves maximum quality from your source image
+            ctx.drawImage(logoImage, x, y, logoDisplaySize, logoDisplaySize);
+            
+            // Export at maximum PNG quality (no compression)
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `apple-touch-icon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+        
+        function downloadAll() {
+            if (!logoImage) {
+                alert('Please upload a logo first!');
+                return;
+            }
+            
+            setTimeout(() => downloadIcon(180), 0);
+            setTimeout(() => downloadIcon(152), 200);
+            setTimeout(() => downloadIcon(120), 400);
+        }
+    </script>
+</body>
+</html>

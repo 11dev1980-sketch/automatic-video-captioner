@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AVT - Arabic Video Translator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- iOS PWA Meta Tags - Must be in this order -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AVT" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AVT" />
+
+    <!-- Theme Colors - Must match app background -->
+    <meta name="theme-color" content="#151A22" />
+    <meta name="msapplication-TileColor" content="#151A22" />
+    
+    <!-- Icons for iOS PWA - 180x180 must be first for iOS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- iOS startup image (optional but recommended) -->
+    <link rel="apple-touch-startup-image" href="/icon.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+    <style>
+      /* Must set background on both html and body for iOS status bar */
+      html {
+        background-color: #151A22;
+      }
+      
+      html, body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: #151A22;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      /* iOS status bar area - ensure consistent color */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top);
+        background-color: #151A22;
+        z-index: 9999;
+      }
+      #root {
+        width: 100%;
+        height: 100vh;
+      }
+      @supports (-webkit-touch-callout: none) {
+        /* iOS Safari specific */
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Tab Title Tracking System
+      const TabTitleTracker = {
+        originalTitle: 'AVT - Arabic Video Translator',
+        titleChanges: [],
+        
+        init() {
+          console.log('[TAB-TITLE] Initializing tab title tracker');
+          console.log('[TAB-TITLE] Initial document.title:', document.title);
+          console.log('[TAB-TITLE] Initial location:', window.location.href);
+          this.trackTitleChanges();
+          this.trackMetaTags();
+          this.trackManifest();
+        },
+        
+        trackTitleChanges() {
+          // Track document.title changes
+          let currentTitle = document.title;
+          Object.defineProperty(document, 'title', {
+            get: function() {
+              return currentTitle;
+            },
+            set: function(newTitle) {
+              const stack = new Error().stack;
+              const caller = stack.split('\n')[3]?.trim() || 'Unknown';
+              
+              console.log('[TAB-TITLE] Title change detected:');
+              console.log('  From:', currentTitle);
+              console.log('  To:', newTitle);
+              console.log('  Caller:', caller);
+              console.log('  Stack trace:', stack);
+              
+              TabTitleTracker.titleChanges.push({
+                from: currentTitle,
+                to: newTitle,
+                timestamp: new Date().toISOString(),
+                caller: caller,
+                stack: stack
+              });
+              
+              currentTitle = newTitle;
+              
+              // Update actual title
+              document.querySelector('title').textContent = newTitle;
+            },
+            configurable: true
+          });
+          
+          // Monitor title element changes
+          const titleObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'childList' && mutation.target.tagName === 'TITLE') {
+                const newTitle = mutation.target.textContent;
+                if (newTitle !== currentTitle) {
+                  console.log('[TAB-TITLE] Title element changed via DOM mutation:', newTitle);
+                  console.log('  Mutation target:', mutation.target);
+                  console.log('  Mutation type:', mutation.type);
+                }
+              }
+            });
+          });
+          
+          titleObserver.observe(document.head, { 
+            childList: true, 
+            subtree: true, 
+            characterData: true 
+          });
+        },
+        
+        trackMetaTags() {
+          console.log('[TAB-TITLE] Checking meta tags that affect title:');
+          
+          const metaTags = [
+            'apple-mobile-web-app-title',
+            'application-name',
+            'og:title',
+            'twitter:title'
+          ];
+          
+          metaTags.forEach(tagName => {
+            const meta = document.querySelector(`meta[name="${tagName}"]`);
+            if (meta) {
+              console.log(`[TAB-TITLE] Meta tag ${tagName}:`, meta.content);
+              
+              // Monitor changes to this meta tag
+              const observer = new MutationObserver((mutations) => {
+                mutations.forEach(() => {
+                  console.log(`[TAB-TITLE] Meta tag ${tagName} changed to:`, meta.content);
+                });
+              });
+              observer.observe(meta, { attributes: true, attributeFilter: ['content'] });
+            }
+          });
+        },
+        
+        trackManifest() {
+          const manifestLink = document.querySelector('link[rel="manifest"]');
+          if (manifestLink) {
+            console.log('[TAB-TITLE] Manifest link found:', manifestLink.href);
+            
+            fetch(manifestLink.href)
+              .then(response => response.json())
+              .then(manifest => {
+                console.log('[TAB-TITLE] Manifest data:');
+                console.log('  name:', manifest.name);
+                console.log('  short_name:', manifest.short_name);
+                console.log('  display:', manifest.display);
+                
+                // Track if manifest affects title
+                if (manifest.name || manifest.short_name) {
+                  console.log('[TAB-TITLE] Manifest contains title data that may affect tab title');
+                }
+              })
+              .catch(error => {
+                console.error('[TAB-TITLE] Failed to load manifest:', error);
+              });
+          }
+        },
+        
+        logAllChanges() {
+          console.log('[TAB-TITLE] All title changes recorded:');
+          this.titleChanges.forEach((change, index) => {
+            console.log(`  ${index + 1}. ${change.timestamp}: "${change.from}" → "${change.to}"`);
+            console.log(`     Caller: ${change.caller}`);
+          });
+        },
+        
+        startContinuousMonitoring() {
+          console.log('[TAB-TITLE] Starting continuous monitoring');
+          
+          // Monitor title changes every 100ms
+          let lastTitle = document.title;
+          let lastCheck = Date.now();
+          
+          const checkInterval = setInterval(() => {
+            const currentTitle = document.title;
+            const now = Date.now();
+            
+            if (currentTitle !== lastTitle) {
+              console.log('[TAB-TITLE] Continuous monitor detected title change:');
+              console.log('  From:', lastTitle);
+              console.log('  To:', currentTitle);
+              console.log('  Time since last check:', now - lastCheck, 'ms');
+              console.log('  Current URL:', window.location.href);
+              
+              // Try to get stack trace
+              try {
+                throw new Error();
+              } catch (e) {
+                const stack = e.stack;
+                const caller = stack.split('\n')[3]?.trim() || 'Unknown';
+                console.log('  Possible caller:', caller);
+              }
+              
+              lastTitle = currentTitle;
+            }
+            lastCheck = now;
+          }, 100);
+          
+          // Also monitor URL changes
+          let lastUrl = window.location.href;
+          const urlCheckInterval = setInterval(() => {
+            const currentUrl = window.location.href;
+            if (currentUrl !== lastUrl) {
+              console.log('[TAB-TITLE] URL changed detected:');
+              console.log('  From:', lastUrl);
+              console.log('  To:', currentUrl);
+              console.log('  Current title:', document.title);
+              lastUrl = currentUrl;
+            }
+          }, 100);
+          
+          // Monitor React-specific changes
+          setTimeout(() => {
+            if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+              console.log('[TAB-TITLE] React DevTools detected - adding React monitoring');
+              
+              // Try to hook into React updates
+              const originalRender = window.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot;
+              if (originalRender) {
+                window.__REACT_DEVTOOLS_GLOBAL_HOOK__.onCommitFiberRoot = function(...args) {
+                  const beforeTitle = document.title;
+                  const result = originalRender.apply(this, args);
+                  const afterTitle = document.title;
+                  
+                  if (beforeTitle !== afterTitle) {
+                    console.log('[TAB-TITLE] React render caused title change:');
+                    console.log('  From:', beforeTitle);
+                    console.log('  To:', afterTitle);
+                  }
+                  
+                  return result;
+                };
+              }
+            }
+          }, 2000);
+          
+          console.log('[TAB-TITLE] Continuous monitoring started - checking every 100ms');
+          
+          // Make intervals available for debugging
+          this.monitoringIntervals = {
+            titleCheck: checkInterval,
+            urlCheck: urlCheckInterval
+          };
+        }
+      };
+      
+      // Force iOS to recognize PWA
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('[PWA] DOM Content Loaded');
+        
+        // Initialize tab title tracking immediately
+        TabTitleTracker.init();
+        
+        // Start continuous monitoring immediately
+        TabTitleTracker.startContinuousMonitoring();
+        
+        // Check if running in standalone mode
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        console.log('[PWA] Standalone mode:', isStandalone);
+        console.log('[PWA] User agent:', navigator.userAgent);
+        console.log('[PWA] Document title:', document.title);
+        
+        // Force update service worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            console.log('[PWA] Existing service workers:', registrations.length);
+            
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+              .then(function(registration) {
+                console.log('[PWA] Service Worker registered with scope:', registration.scope);
+                console.log('[PWA] Service Worker state:', registration.active ? 'active' : 'installing');
+                
+                // Force update
+                registration.update();
+                
+                // Check if service worker is controlling the page
+                if (navigator.serviceWorker.controller) {
+                  console.log('[PWA] Service Worker is controlling the page');
+                } else {
+                  console.log('[PWA] Service Worker is not controlling the page yet, waiting for activation...');
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    console.log('[PWA] Service Worker is now controlling the page');
+                    // Reload the page to ensure proper PWA behavior
+                    if (!isStandalone) {
+                      console.log('[PWA] Reloading page for PWA activation');
+                      window.location.reload();
+                    }
+                  });
+                }
+              })
+              .catch(function(error) {
+                console.error('[PWA] Service Worker registration failed:', error);
+              });
+          });
+        } else {
+          console.warn('[PWA] Service Worker not supported in this browser');
+        }
+        
+        // Log manifest loading
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+          console.log('[PWA] Manifest link found:', manifestLink.href);
+          fetch(manifestLink.href)
+            .then(response => {
+              console.log('[PWA] Manifest loaded, status:', response.status);
+              return response.json();
+            })
+            .then(manifest => {
+              console.log('[PWA] Manifest content:', manifest);
+              console.log('[PWA] Manifest name:', manifest.name);
+              console.log('[PWA] Manifest short_name:', manifest.short_name);
+              console.log('[PWA] Manifest display:', manifest.display);
+            })
+            .catch(error => {
+              console.error('[PWA] Failed to load manifest:', error);
+            });
+        } else {
+          console.warn('[PWA] No manifest link found');
+        }
+        
+        // Track window title changes
+        console.log('[TAB-TITLE] Setting up window title monitoring');
+        let windowTitle = window.document.title;
+        
+        // Monitor window title changes
+        setInterval(() => {
+          if (window.document.title !== windowTitle) {
+            console.log('[TAB-TITLE] Window title changed:');
+            console.log('  From:', windowTitle);
+            console.log('  To:', window.document.title);
+            console.log('  Timestamp:', new Date().toISOString());
+            windowTitle = window.document.title;
+          }
+        }, 100);
+        
+        // Track React-specific title changes (if React is loaded)
+        if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+          console.log('[TAB-TITLE] React DevTools detected - monitoring React title changes');
+          
+          // Try to access React root
+          setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root._reactRootContainer) {
+              console.log('[TAB-TITLE] React root container found');
+              // Monitor React component updates that might change title
+            }
+          }, 1000);
+        }
+        
+        // Add global title change listener
+        window.addEventListener('titlechange', () => {
+          console.log('[TAB-TITLE] Title change event fired:', document.title);
+        });
+        
+        // Make TabTitleTracker available globally for debugging
+        window.TabTitleTracker = TabTitleTracker;
+        console.log('[TAB-TITLE] TabTitleTracker available as window.TabTitleTracker');
+        console.log('[TAB-TITLE] Use TabTitleTracker.logAllChanges() to see all changes');
+        
+        // Caption Editor is now a tab in root - no URL routing needed
+        console.log('[TAB-TITLE] Caption Editor is now a root tab - no URL routing');
+        
+      });
+    </script>
+  </body>
+</html>

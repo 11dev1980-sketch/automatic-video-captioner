@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AVT - Arabic Video Translator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="AVT" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AVT" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#0a0e1a" />
+    <meta name="msapplication-TileColor" content="#0a0e1a" />
+    
+    <!-- Icons for iOS PWA -->
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Dynamic manifest loading for local testing -->
+    <script>
+      // Fix manifest URL for local testing
+      if (window.location.protocol === 'file:') {
+        // Remove the file:// manifest link and add a dynamic one
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+          manifestLink.remove();
+        }
+        
+        // Create new manifest link with correct path
+        const newManifestLink = document.createElement('link');
+        newManifestLink.rel = 'manifest';
+        // Get the current directory and point to dist/manifest.json
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+        newManifestLink.href = basePath + '/dist/manifest.json';
+        document.head.appendChild(newManifestLink);
+      }
+    </script>
+    
+    <!-- Prevent iOS from showing share menu icon with white background -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      html, body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: #0a0e1a;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #root {
+        width: 100%;
+        height: 100vh;
+      }
+      @supports (-webkit-touch-callout: none) {
+        /* iOS Safari specific */
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
+      
+      /* iOS Simulator Console */
+      #ios-console {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        padding: 10px;
+        overflow-y: auto;
+        z-index: 9999;
+        border-bottom: 2px solid #333;
+        display: none;
+      }
+      
+      #ios-console.show {
+        display: block;
+      }
+      
+      #ios-console .timestamp {
+        color: #888;
+        margin-right: 5px;
+      }
+      
+      #ios-console .pwa {
+        color: #4CAF50;
+      }
+      
+      #ios-console .error {
+        color: #f44336;
+      }
+      
+      #ios-console .warn {
+        color: #ff9800;
+      }
+      
+      #console-toggle {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: 1px solid #333;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10000;
+        font-size: 12px;
+      }
+      
+      #console-toggle:hover {
+        background: rgba(0, 0, 0, 1);
+      }
+      
+      /* iOS Device Frame */
+      .ios-frame {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 375px;
+        height: 812px;
+        background: #000;
+        border-radius: 40px;
+        padding: 10px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        transform: scale(0.5);
+        transform-origin: bottom right;
+        z-index: 1000;
+      }
+      
+      .ios-frame-screen {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        border-radius: 30px;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      .ios-frame-notch {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+        height: 30px;
+        background: #000;
+        border-radius: 0 0 20px 20px;
+        z-index: 10;
+      }
+      
+      .ios-frame-content {
+        width: 100%;
+        height: 100%;
+        background: #0a0e1a;
+        padding-top: 40px;
+        box-sizing: border-box;
+      }
+      
+      .sim-info {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        max-width: 300px;
+      }
+      
+      .sim-info h4 {
+        margin: 0 0 10px 0;
+        color: #4CAF50;
+      }
+      
+      .sim-info ul {
+        margin: 5px 0;
+        padding-left: 20px;
+      }
+      
+      .sim-info li {
+        margin: 3px 0;
+      }
+      
+      .sim-info .status {
+        color: #4CAF50;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div style="padding: 20px; color: white;">
+        <h1>AVT - Arabic Video Translator</h1>
+        <p>iOS PWA Simulator</p>
+        <p>Click the console button (top right) to see PWA logs</p>
+      </div>
+    </div>
+    
+    <button id="console-toggle" onclick="toggleConsole()">Console</button>
+    
+    <div id="ios-console"></div>
+    
+    <div class="sim-info">
+      <h4>iOS PWA Simulator</h4>
+      <ul>
+        <li><span class="status">✓</span> Service Worker: <span id="sw-status">Checking...</span></li>
+        <li><span class="status">✓</span> Manifest: <span id="manifest-status">Checking...</span></li>
+        <li><span class="status">✓</span> Standalone: <span id="standalone-status">Checking...</span></li>
+        <li><span class="status">✓</span> User Agent: <span id="ua-status">Checking...</span></li>
+      </ul>
+      <p style="margin-top: 10px; font-size: 11px; color: #888;">
+        This simulates iOS PWA behavior on desktop
+      </p>
+    </div>
+    
+    <script>
+      // Console logging to screen
+      const consoleElement = document.getElementById('ios-console');
+      const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info
+      };
+      
+      function logToScreen(message, type = 'log') {
+        const timestamp = new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.innerHTML = `<span class="timestamp">${timestamp}</span><span class="${type}">${message}</span>`;
+        consoleElement.appendChild(div);
+        consoleElement.scrollTop = consoleElement.scrollHeight;
+      }
+      
+      // Override console methods
+      console.log = function(...args) {
+        originalConsole.log.apply(console, args);
+        if (args[0] && args[0].includes && args[0].includes('[PWA]')) {
+          logToScreen(args.join(' '), 'pwa');
+        }
+      };
+      
+      console.error = function(...args) {
+        originalConsole.error.apply(console, args);
+        if (args[0] && args[0].includes && args[0].includes('[PWA]')) {
+          logToScreen(args.join(' '), 'error');
+        }
+      };
+      
+      console.warn = function(...args) {
+        originalConsole.warn.apply(console, args);
+        if (args[0] && args[0].includes && args[0].includes('[PWA]')) {
+          logToScreen(args.join(' '), 'warn');
+        }
+      };
+      
+      function toggleConsole() {
+        consoleElement.classList.toggle('show');
+      }
+      
+      // Force iOS to recognize PWA
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('[PWA] DOM Content Loaded');
+        logToScreen('[PWA] DOM Content Loaded', 'pwa');
+        
+        // Check if running in standalone mode
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        console.log('[PWA] Standalone mode:', isStandalone);
+        console.log('[PWA] User agent:', navigator.userAgent);
+        console.log('[PWA] Document title:', document.title);
+        
+        // Update simulator info
+        document.getElementById('standalone-status').textContent = isStandalone ? 'Yes' : 'No';
+        document.getElementById('ua-status').textContent = navigator.userAgent.includes('Safari') ? 'Safari' : 'Other';
+        
+        // Force update service worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            console.log('[PWA] Existing service workers:', registrations.length);
+            document.getElementById('sw-status').textContent = `${registrations.length} found`;
+            
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+              .then(function(registration) {
+                console.log('[PWA] Service Worker registered with scope:', registration.scope);
+                console.log('[PWA] Service Worker state:', registration.active ? 'active' : 'installing');
+                document.getElementById('sw-status').textContent = 'Registered';
+                
+                // Force update
+                registration.update();
+                
+                // Check if service worker is controlling the page
+                if (navigator.serviceWorker.controller) {
+                  console.log('[PWA] Service Worker is controlling the page');
+                } else {
+                  console.log('[PWA] Service Worker is not controlling the page yet, waiting for activation...');
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    console.log('[PWA] Service Worker is now controlling the page');
+                    // Reload the page to ensure proper PWA behavior
+                    if (!isStandalone) {
+                      console.log('[PWA] Reloading page for PWA activation');
+                      window.location.reload();
+                    }
+                  });
+                }
+              })
+              .catch(function(error) {
+                console.error('[PWA] Service Worker registration failed:', error);
+                document.getElementById('sw-status').textContent = 'Failed';
+              });
+          });
+        } else {
+          console.warn('[PWA] Service Worker not supported in this browser');
+          document.getElementById('sw-status').textContent = 'Not supported';
+        }
+        
+        // Log manifest loading
+        setTimeout(() => {
+          const manifestLink = document.querySelector('link[rel="manifest"]');
+          if (manifestLink) {
+            console.log('[PWA] Manifest link found:', manifestLink.href);
+            document.getElementById('manifest-status').textContent = 'Loading...';
+            fetch(manifestLink.href)
+              .then(response => {
+                console.log('[PWA] Manifest loaded, status:', response.status);
+                document.getElementById('manifest-status').textContent = `Loaded (${response.status})`;
+                return response.json();
+              })
+              .then(manifest => {
+                console.log('[PWA] Manifest content:', manifest);
+                console.log('[PWA] Manifest name:', manifest.name);
+                console.log('[PWA] Manifest short_name:', manifest.short_name);
+                console.log('[PWA] Manifest display:', manifest.display);
+                document.getElementById('manifest-status').textContent = 'Valid';
+              })
+              .catch(error => {
+                console.error('[PWA] Failed to load manifest:', error);
+                document.getElementById('manifest-status').textContent = 'Failed';
+                
+                // Try alternative manifest paths
+                if (window.location.protocol === 'file:') {
+                  console.log('[PWA] Trying alternative manifest paths...');
+                  const alternatives = [
+                    '../dist/manifest.json',
+                    '../../dist/manifest.json',
+                    './dist/manifest.json',
+                    '../manifest.json',
+                    './manifest.json'
+                  ];
+                  
+                  alternatives.forEach((alt, index) => {
+                    fetch(alt)
+                      .then(response => {
+                        if (response.ok) {
+                          console.log('[PWA] Found manifest at:', alt);
+                          document.getElementById('manifest-status').textContent = `Found at ${alt}`;
+                          return response.json();
+                        }
+                      })
+                      .catch(() => {
+                        // Ignore failed attempts
+                      });
+                  });
+                }
+              });
+          } else {
+            console.warn('[PWA] No manifest link found');
+            document.getElementById('manifest-status').textContent = 'Not found';
+          }
+        }, 100);
+      });
+    </script>
+  </body>
+</html>

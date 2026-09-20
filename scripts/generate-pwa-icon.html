@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PWA Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="1024" height="1024"></canvas>
+    <div style="margin-top: 20px;">
+        <button onclick="downloadIcon(512, 'icon-512.png')">Download 512x512</button>
+        <button onclick="downloadIcon(192, 'icon-192.png')">Download 192x192</button>
+        <button onclick="downloadIcon(1024, 'icon-1024.png')">Download 1024x1024</button>
+        <button onclick="downloadIcon(48, 'favicon.png')">Download 48x48 (Favicon)</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function drawIcon() {
+            // Background gradient (indigo to purple)
+            const gradient = ctx.createLinearGradient(0, 0, 1024, 1024);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(1, '#8b5cf6');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1024, 1024);
+            
+            // Add subtle pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.arc(512, 512, 100 + i * 50, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Main circle background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.beginPath();
+            ctx.arc(512, 512, 380, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Shadow for depth
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 30;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 10;
+            
+            // Play button triangle (video element)
+            ctx.fillStyle = '#6366f1';
+            ctx.beginPath();
+            ctx.moveTo(420, 350);
+            ctx.lineTo(420, 674);
+            ctx.lineTo(680, 512);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Arabic letter "ع" (Ain) - stylized
+            ctx.fillStyle = '#8b5cf6';
+            ctx.font = 'bold 180px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ع', 560, 520);
+            
+            // Translation arrows (subtle)
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Right arrow
+            ctx.beginPath();
+            ctx.moveTo(650, 420);
+            ctx.lineTo(720, 420);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(700, 400);
+            ctx.lineTo(720, 420);
+            ctx.lineTo(700, 440);
+            ctx.stroke();
+            
+            // Left arrow
+            ctx.beginPath();
+            ctx.moveTo(650, 600);
+            ctx.lineTo(720, 600);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(670, 580);
+            ctx.lineTo(650, 600);
+            ctx.lineTo(670, 620);
+            ctx.stroke();
+            
+            // Subtitle lines (representing transcription)
+            ctx.fillStyle = '#6366f1';
+            ctx.fillRect(320, 740, 180, 8);
+            ctx.fillRect(320, 765, 240, 8);
+            ctx.fillRect(320, 790, 200, 8);
+        }
+        
+        function downloadIcon(size, filename) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Enable image smoothing for better quality
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = 'high';
+            
+            // Draw scaled version
+            tempCtx.drawImage(canvas, 0, 0, size, size);
+            
+            // Download
+            tempCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+        
+        // Draw the icon on load
+        drawIcon();
+    </script>
+</body>
+</html>

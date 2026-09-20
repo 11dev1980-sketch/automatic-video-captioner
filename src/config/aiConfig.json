@@ -1,0 +1,25 @@
+{
+  "providers": {
+    "dub5": {
+      "name": "DUB5 AI (Vercel)",
+      "enabled": false,
+      "url": "https://chatbot-beta-weld.vercel.app",
+      "description": "Default AI provider using Supadata API"
+    },
+    "gemini": {
+      "name": "Google AI Studio",
+      "enabled": true,
+      "description": "Google AI Studio with Gemini model"
+    }
+  },
+  "settings": {
+    "activeProvider": "gemini",
+    "fallbackProvider": "gemini",
+    "allowFallback": true
+  },
+  "prompts": {
+    "transcription": "Extract the Arabic speech transcript from this video content",
+    "translation": "Translate the Arabic text to Dutch",
+    "duaExtraction": "Extract Islamic prayers and supplications from this text"
+  }
+}

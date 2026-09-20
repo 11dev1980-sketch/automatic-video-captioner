@@ -1,0 +1,29 @@
+{
+  "name": "instagram-proxy-server",
+  "version": "1.0.0",
+  "description": "Self-hosted Instagram video download proxy server",
+  "main": "instagram-proxy.js",
+  "scripts": {
+    "start": "node instagram-proxy.js",
+    "dev": "nodemon instagram-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "http-proxy-middleware": "^2.0.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "instagram",
+    "video",
+    "download",
+    "proxy",
+    "cors"
+  ],
+  "author": "",
+  "license": "MIT"
+}
