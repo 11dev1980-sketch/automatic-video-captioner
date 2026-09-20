@@ -39,6 +39,21 @@ app.use('/api/transcribe', transcribeHandler);
 app.use('/api/caption', captionHandler);
 app.use('/api/download', downloadHandler);
 
+// Root route - API info
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Automatic Video Captioner API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      transcribe: '/api/transcribe',
+      caption: '/api/caption',
+      download: '/api/download'
+    },
+    documentation: 'See README.md for API usage'
+  });
+});
+
 // Serve RapidAPI video download endpoints (for downloading reels and other videos)
 // Note: Download endpoint now works locally using RAPIDAPI_KEY environment variable
 // Video and Media ES module handlers are still skipped for local server
