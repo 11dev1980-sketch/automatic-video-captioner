@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Arabische Video Vertaler",
-    "slug": "arabic-video-translator",
-    "version": "1.2.2",
+    "name": "Automatic Video Captioner",
+    "slug": "automatic-video-captioner",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -16,14 +16,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.arabicvideotranslator.app"
+      "bundleIdentifier": "com.automaticvideocaptioner.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.arabicvideotranslator.app"
+      "package": "com.automaticvideocaptioner.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
