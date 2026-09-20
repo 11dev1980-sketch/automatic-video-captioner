@@ -99,6 +99,34 @@ const ExportPanel = memo(function ExportPanel({
 
       downloadBurnedVideo(finalResult);
       setLastResult('Export voltooid');
+      
+      // Save caption metadata to Google Drive for history
+      try {
+        setExportStep('Opslaan naar geschiedenis...');
+        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+        
+        await fetch(`${apiUrl}/api/drive/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            captionData: {
+              captions: captions,
+              style: captionStyle,
+              totalDuration: captions[captions.length - 1]?.endTime || 0,
+            },
+            videoId: `export_${Date.now()}`,
+            videoName: finalResult.filename,
+          }),
+        });
+        
+        console.log('[EXPORT] Saved caption metadata to Google Drive history');
+      } catch (driveError) {
+        console.error('[EXPORT] Failed to save to Google Drive:', driveError);
+        // Continue even if Drive save fails
+      }
+      
       onExportComplete?.(finalResult.url);
     } catch (e) {
       Alert.alert('Export fout', e instanceof Error ? e.message : String(e));
