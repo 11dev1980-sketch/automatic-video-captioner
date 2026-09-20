@@ -42,6 +42,7 @@ export function HomeScreen({ navigation }) {
   const [quickStartUrl, setQuickStartUrl] = useState("");
   const [urlError, setUrlError] = useState("");
   const [recentResults, setRecentResults] = useState([]);
+  const [greeting, setGreeting] = useState("Hallo");
 
   console.log("📍 HomeScreen: State initialized, about to run useEffect");
 
@@ -50,12 +51,26 @@ export function HomeScreen({ navigation }) {
     try {
       loadUserName();
       loadRecentResults();
+      updateGreeting();
       console.log("✅ HomeScreen: Data loading initiated successfully");
     } catch (error) {
       console.error("❌ HomeScreen: Error in useEffect:", error);
       console.error("❌ HomeScreen: Error stack:", error.stack);
     }
   }, []);
+
+  const updateGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting("Goedemorgen");
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting("Goedemiddag");
+    } else if (hour >= 18 && hour < 24) {
+      setGreeting("Goedenavond");
+    } else {
+      setGreeting("Hallo");
+    }
+  };
 
   const loadUserName = async () => {
     const name = await getUserName();
@@ -117,11 +132,12 @@ export function HomeScreen({ navigation }) {
     }
     // Use cleaned URL and pass platform info
     const cleanUrl = validation.cleaned || urlToUse;
-    // Navigate directly to CaptionEditor tab for subtitle editing
+    // Navigate directly to CaptionEditor with the URL pre-filled
+    // The CaptionEditorScreen will auto-load the video via useEffect
     navigation.navigate("CaptionEditor", {
       reelUrl: cleanUrl,
       platform: validation.platform,
-      instagramEnabled: false, // Default to disable Instagram
+      instagramEnabled: false,
       instagramPostConfig: null,
       targetLanguage: "dutch",
     });
@@ -210,8 +226,8 @@ export function HomeScreen({ navigation }) {
             <PageHeader
               title={
                 userName
-                  ? formatString(strings.home.greeting, userName)
-                  : strings.home.greetingDefault
+                  ? `${greeting}, ${userName}`
+                  : greeting
               }
               subtitle={strings.home.subtitle}
             />

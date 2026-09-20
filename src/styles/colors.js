@@ -14,6 +14,11 @@ export const colors = {
     accentDark: '#cc8a1a',    // Darker amber
     accentLight: '#ffc966',   // Lighter amber
 
+    // Secondary Color - Blue/Purple
+    secondary: '#6366f1',     // Indigo
+    secondaryDark: '#4f46e5', // Darker indigo
+    secondaryLight: '#818cf8', // Lighter indigo
+
     // Background Colors - Deep dark with subtle blue tint
     background: '#0a0e1a',           // Deep dark blue-black
     backgroundSecondary: '#0f1419',  // Slightly lighter

@@ -65,6 +65,8 @@ export function CaptionEditorScreen({ navigation, route }) {
   const [extractedVideoUrl, setExtractedVideoUrl] = useState("");
   const [videoId, setVideoId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUrlLoading, setIsUrlLoading] = useState(false);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -80,9 +82,9 @@ export function CaptionEditorScreen({ navigation, route }) {
     if (route?.params?.reelUrl) {
       console.log("📍 CaptionEditorScreen: Auto-loading video from params:", route.params.reelUrl);
       setVideoUrl(route.params.reelUrl);
-      // Trigger the load video function
+      // Trigger the load video function with autoNavigate flag
       setTimeout(() => {
-        handleLoadVideo(route.params.reelUrl);
+        handleLoadVideo(route.params.reelUrl, true);
       }, 100);
     }
   }, [route?.params?.reelUrl]);
@@ -137,13 +139,13 @@ export function CaptionEditorScreen({ navigation, route }) {
    */
   const handleSelectLocalVideo = async () => {
     try {
-      setIsLoading(true);
+      setIsLocalLoading(true);
       setVideoError(null);
       
       const file = await selectVideoFile();
       
       if (!file) {
-        setIsLoading(false);
+        setIsLocalLoading(false);
         return;
       }
 
@@ -179,19 +181,18 @@ export function CaptionEditorScreen({ navigation, route }) {
         localVideoFile: file,
       });
       
-      setIsLoading(false);
+      setIsLocalLoading(false);
     } catch (error) {
       console.error('[CAPTION-EDITOR] Local video selection failed:', error);
-      setVideoError(error.message);
-      Alert.alert('Fout bij selecteren', error.message);
-      setIsLoading(false);
+      // Don't set videoError - log to console only
+      setIsLocalLoading(false);
     }
   };
 
   /**
    * Load video from URL
    */
-  const handleLoadVideo = async (urlToLoad = null) => {
+  const handleLoadVideo = async (urlToLoad = null, autoNavigate = false) => {
     // Handle event objects - use current state if event is passed
     let urlToUse = urlToLoad || videoUrl;
     
@@ -204,7 +205,7 @@ export function CaptionEditorScreen({ navigation, route }) {
     console.log("[CAPTION-EDITOR] Load video button clicked, URL:", urlToUse);
 
     if (!isValidVideoUrl(urlToUse)) {
-      Alert.alert("Ongeldige URL", "Voer een geldige video-URL in");
+      console.error('[CAPTION-EDITOR] Invalid URL:', urlToUse);
       return;
     }
 
@@ -213,16 +214,12 @@ export function CaptionEditorScreen({ navigation, route }) {
     const timeSinceLastCall = now - lastApiCallTime.current;
     if (timeSinceLastCall < RATE_LIMIT_DELAY) {
       const waitTime = Math.ceil((RATE_LIMIT_DELAY - timeSinceLastCall) / 1000);
-      Alert.alert(
-        "Rate Limit",
-        `Please wait ${waitTime} second${waitTime > 1 ? "s" : ""} before making another request.`,
-        [{ text: "OK" }],
-      );
+      console.log('[CAPTION-EDITOR] Rate limited, wait:', waitTime);
       return;
     }
 
     lastApiCallTime.current = now;
-    setIsLoading(true);
+    setIsUrlLoading(true);
     setVideoError(null);
     setVideoLoaded(false);
     console.log("[CAPTION-EDITOR] Starting video load...");
@@ -316,7 +313,7 @@ export function CaptionEditorScreen({ navigation, route }) {
 
           // Simple error message
           setVideoError(`Sorry, we couldn't load this ${platform} video.`);
-          setIsLoading(false);
+          setIsUrlLoading(false);
           return;
         }
       } else {
@@ -344,17 +341,25 @@ export function CaptionEditorScreen({ navigation, route }) {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       setVideoLoaded(true);
-      setIsLoading(false);
+      setIsUrlLoading(false);
       console.log(
         "[CAPTION-EDITOR] Video loaded successfully, videoLoaded:",
         true,
       );
+      
+      // Auto-navigate to workspace if this was called from homepage
+      if (autoNavigate || route?.params?.reelUrl) {
+        console.log("[CAPTION-EDITOR] Auto-navigating to workspace");
+        setTimeout(() => {
+          handleStartEditing();
+        }, 500);
+      }
     } catch (error) {
       console.error("[CAPTION-EDITOR] Error loading video:", error);
       setVideoError(
         "Sorry, we couldn't load this video. Please try again later or upload the video directly.",
       );
-      setIsLoading(false);
+      setIsUrlLoading(false);
     }
   };
 
@@ -501,6 +506,8 @@ export function CaptionEditorScreen({ navigation, route }) {
       videoUrl={videoUrl}
       extractedVideoUrl={extractedVideoUrl}
       isLoading={isLoading}
+      isUrlLoading={isUrlLoading}
+      isLocalLoading={isLocalLoading}
       videoLoaded={videoLoaded}
       videoError={videoError}
       isPlaying={isPlaying}

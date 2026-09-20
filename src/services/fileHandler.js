@@ -37,7 +37,9 @@ export async function selectVideoFile() {
       mimeType: file.mimeType,
     };
   } catch (error) {
-    throw new Error(`File selection failed: ${error.message}`);
+    console.error('[FILE-HANDLER] File selection failed:', error);
+    // Return null instead of throwing error to avoid displaying on page
+    return null;
   }
 }
 

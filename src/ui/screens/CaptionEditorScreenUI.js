@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 
 // Custom Video Player Component
 const VideoPlayer = ({ videoUrl, extractedVideoUrl, videoRef, onPlaybackStatusUpdate, style, onPlayPause, isPlaying }) => {
@@ -297,6 +298,7 @@ import { layout } from '../../styles/layout';
 import { typography } from '../../styles/typography';
 import { globalStyles } from '../../styles/globalStyles';
 import { PageHeader } from '../../components/common/PageHeader';
+import * as Clipboard from 'expo-clipboard';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
 
@@ -329,6 +331,10 @@ export function CaptionEditorScreenUI({
     localVideoFile,
     isLocalVideo,
     
+    // Loading states for individual buttons
+    isUrlLoading,
+    isLocalLoading,
+    
     // UI state
     activeTab,
     setActiveTab,
@@ -347,6 +353,15 @@ export function CaptionEditorScreenUI({
     downloadStackNavigator,
     libraryStackNavigator,
 }) {
+    const [copied, setCopied] = useState(false);
+    
+    const handleCopyUrl = async () => {
+        if (videoUrl) {
+            await Clipboard.setStringAsync(videoUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
     /**
      * Render video preview
      */
@@ -362,14 +377,12 @@ export function CaptionEditorScreenUI({
         }
 
         if (videoError) {
+            console.error('[CAPTION-EDITOR-UI] Video error:', videoError);
             return (
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={80} color={colors.error} />
                     <Text style={styles.errorTitle}>Video Fout</Text>
                     <Text style={styles.errorMessage}>{videoError}</Text>
-                    <Text style={styles.errorHint}>
-                        Tip: Probeer een directe videolink te gebruiken, of upload een video vanaf je apparaat.
-                    </Text>
                 </View>
             );
         }
@@ -420,25 +433,30 @@ export function CaptionEditorScreenUI({
                         autoCapitalize="none"
                         autoCorrect={false}
                         keyboardType="url"
-                        editable={!isLoading}
+                        editable={!isUrlLoading}
                     />
                     {videoUrl.length > 0 && (
-                        <TouchableOpacity onPress={onClearVideoUrl} style={styles.clearButton}>
-                            <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-                        </TouchableOpacity>
+                        <>
+                            <TouchableOpacity onPress={handleCopyUrl} style={styles.copyButton}>
+                                <Ionicons name={copied ? "checkmark-circle" : "copy-outline"} size={20} color={copied ? colors.success : colors.textSecondary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={onClearVideoUrl} style={styles.clearButton}>
+                                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                        </>
                     )}
                 </View>
                 
                 <TouchableOpacity
                     style={[
                         styles.loadButton,
-                        (!videoUrl.trim() || isLoading) && styles.loadButtonDisabled
+                        (!videoUrl.trim() || isUrlLoading) && styles.loadButtonDisabled
                     ]}
                     onPress={() => onLoadVideo()}
-                    disabled={!videoUrl.trim() || isLoading}
+                    disabled={!videoUrl.trim() || isUrlLoading}
                     activeOpacity={0.8}
                 >
-                    {isLoading ? (
+                    {isUrlLoading ? (
                         <ActivityIndicator size="small" color={colors.white} />
                     ) : (
                         <>
@@ -452,13 +470,13 @@ export function CaptionEditorScreenUI({
                     style={[
                         styles.loadButton,
                         styles.localUploadButton,
-                        isLoading && styles.loadButtonDisabled
+                        isLocalLoading && styles.loadButtonDisabled
                     ]}
                     onPress={onSelectLocalVideo}
-                    disabled={isLoading}
+                    disabled={isLocalLoading}
                     activeOpacity={0.8}
                 >
-                    {isLoading ? (
+                    {isLocalLoading ? (
                         <ActivityIndicator size="small" color={colors.white} />
                     ) : (
                         <>
@@ -467,10 +485,6 @@ export function CaptionEditorScreenUI({
                         </>
                     )}
                 </TouchableOpacity>
-                
-                {videoError && (
-                    <Text style={styles.errorText}>{videoError}</Text>
-                )}
             </View>
         );
     };
@@ -609,6 +623,9 @@ const styles = StyleSheet.create({
     },
     inputIcon: {
         marginRight: layout.spacing.sm,
+    },
+    copyButton: {
+        padding: layout.spacing.xs,
     },
     clearButton: {
         padding: layout.spacing.xs,
