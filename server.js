@@ -58,9 +58,17 @@ const rapidapiKeys = process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.split('
 console.log('[Server] RAPIDAPI_KEY:', rapidapiKeys.length > 0 ? `✓ Set (${rapidapiKeys.length} key(s))` : '✗ Missing');
 
 // Start server
-const server = app.listen(PORT, () => {
-  console.log(`\n🚀 API Server running at http://localhost:${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api/*\n`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || process.env.RAILWAY_STATIC_URL;
+  const host = isRailway ? process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || `0.0.0.0:${PORT}` : `localhost:${PORT}`;
+  const protocol = isRailway ? 'https' : 'http';
+  
+  console.log(`\n🚀 API Server running at ${protocol}://${host}`);
+  console.log(`📡 API endpoints available at ${protocol}://${host}/api/*\n`);
+  
+  if (isRailway) {
+    console.log('[Server] Running on Railway');
+  }
 });
 
 // Keep the server running indefinitely
