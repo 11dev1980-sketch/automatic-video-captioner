@@ -2,7 +2,11 @@
 # Tell Railway to use the server as the main entry point
 startCommand = "node server.js"
 
-# Specify Node version
+# Skip the build step since we're deploying the API server, not the web app
+# Railway will only run npm install and then start the server
+buildCommand = "npm install"
+
+# Specify Node version (Node 20 required for toReversed() method)
 [build.config]
 nodeVersion = "20"
 
