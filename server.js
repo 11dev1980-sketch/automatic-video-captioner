@@ -19,7 +19,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -60,14 +60,16 @@ console.log('[Server] RAPIDAPI_KEY:', rapidapiKeys.length > 0 ? `✓ Set (${rapi
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
   const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || process.env.RAILWAY_STATIC_URL;
-  const host = isRailway ? process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || `0.0.0.0:${PORT}` : `localhost:${PORT}`;
-  const protocol = isRailway ? 'https' : 'http';
-  
-  console.log(`\n🚀 API Server running at ${protocol}://${host}`);
-  console.log(`📡 API endpoints available at ${protocol}://${host}/api/*\n`);
+  const port = process.env.PORT || PORT;
   
   if (isRailway) {
+    const publicDomain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
+    console.log(`\n🚀 API Server running at https://${publicDomain}`);
+    console.log(`📡 API endpoints available at https://${publicDomain}/api/*\n`);
     console.log('[Server] Running on Railway');
+  } else {
+    console.log(`\n🚀 API Server running at http://localhost:${port}`);
+    console.log(`📡 API endpoints available at http://localhost:${port}/api/*\n`);
   }
 });
 
