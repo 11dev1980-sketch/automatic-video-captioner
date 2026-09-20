@@ -1,0 +1,11 @@
+[build]
+# Tell Railway to use the server as the main entry point
+startCommand = "node server.js"
+
+# Specify Node version
+[build.config]
+nodeVersion = "20"
+
+# Configure npm to use legacy peer deps
+[build.npm]
+args = ["install", "--legacy-peer-deps"]
