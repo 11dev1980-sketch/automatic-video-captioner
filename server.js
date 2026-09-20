@@ -84,6 +84,10 @@ const geminiKeys = process.env.GOOGLE_AI_STUDIO_API_KEY ? process.env.GOOGLE_AI_
 console.log('[Server] GOOGLE_AI_STUDIO_API_KEY:', geminiKeys.length > 0 ? `✓ Set (${geminiKeys.length} key(s))` : '✗ Missing');
 const rapidapiKeys = process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.split(',').map(k => k.trim()).filter(k => k) : [];
 console.log('[Server] RAPIDAPI_KEY:', rapidapiKeys.length > 0 ? `✓ Set (${rapidapiKeys.length} key(s))` : '✗ Missing');
+const driveKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
+console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY:', driveKey ? '✓ Set' : '✗ Missing');
+const driveFolder = process.env.GOOGLE_DRIVE_FOLDER_ID;
+console.log('[Server] GOOGLE_DRIVE_FOLDER_ID:', driveFolder ? '✓ Set' : '✗ Missing');
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {

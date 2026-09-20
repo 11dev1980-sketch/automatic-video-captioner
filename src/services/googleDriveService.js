@@ -20,23 +20,39 @@ let drive = null;
  */
 function initializeDrive() {
   try {
-    // Load service account credentials
-    const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
-    
-    if (!keyPath) {
-      console.error('[GOOGLE_DRIVE] GOOGLE_SERVICE_ACCOUNT_KEY_PATH not set in environment');
-      return null;
-    }
+    let credentials;
 
-    const keyFile = path.resolve(process.cwd(), keyPath);
-    
-    if (!fs.existsSync(keyFile)) {
-      console.error('[GOOGLE_DRIVE] Service account key file not found:', keyFile);
+    // Check if GOOGLE_SERVICE_ACCOUNT_KEY is set (Railway - JSON string)
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+      try {
+        credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+        console.log('[GOOGLE_DRIVE] Using GOOGLE_SERVICE_ACCOUNT_KEY (Railway)');
+      } catch (parseError) {
+        console.error('[GOOGLE_DRIVE] Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY:', parseError);
+        return null;
+      }
+    } 
+    // Check if GOOGLE_SERVICE_ACCOUNT_KEY_PATH is set (Local - file path)
+    else if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH) {
+      const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
+      const keyFile = path.resolve(process.cwd(), keyPath);
+      
+      if (!fs.existsSync(keyFile)) {
+        console.error('[GOOGLE_DRIVE] Service account key file not found:', keyFile);
+        return null;
+      }
+
+      const keyContent = fs.readFileSync(keyFile, 'utf8');
+      credentials = JSON.parse(keyContent);
+      console.log('[GOOGLE_DRIVE] Using GOOGLE_SERVICE_ACCOUNT_KEY_PATH (Local)');
+    } 
+    else {
+      console.error('[GOOGLE_DRIVE] Neither GOOGLE_SERVICE_ACCOUNT_KEY nor GOOGLE_SERVICE_ACCOUNT_KEY_PATH is set');
       return null;
     }
 
     const auth = new google.auth.GoogleAuth({
-      keyFile: keyFile,
+      credentials: credentials,
       scopes: SCOPES,
     });
 
