@@ -179,7 +179,7 @@ export function VideoLibraryScreen({ navigation }) {
         const video = videos.find(v => v.id === videoId);
         if (video) {
             // For local videos, navigate to caption editor directly
-            if (video.uri && (video.uri.startsWith('file://') || video.uri.startsWith('content://'))) {
+            if (video.uri && (video.uri.startsWith('file://') || video.uri.startsWith('content://') || video.uri.startsWith('blob:'))) {
                 navigation.navigate('CaptionEditor', {
                     reelUrl: video.uri,
                     fromLibrary: true,
