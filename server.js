@@ -41,33 +41,19 @@ app.use('/api/download', downloadHandler);
 
 // Root route - API info
 app.get('/', (req, res) => {
-  // Serve web app if build exists, otherwise show API info
-  const webBuildPath = path.join(__dirname, 'dist');
-  if (fs.existsSync(webBuildPath)) {
-    res.sendFile(path.join(webBuildPath, 'index.html'));
-  } else {
-    res.json({
-      name: 'Automatic Video Captioner API',
-      version: '1.0.0',
-      status: 'running',
-      endpoints: {
-        transcribe: '/api/transcribe',
-        caption: '/api/caption',
-        download: '/api/download'
-      },
-      documentation: 'See README.md for API usage'
-    });
-  }
+  res.json({
+    name: 'Automatic Video Captioner API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      transcribe: '/api/transcribe',
+      caption: '/api/caption',
+      download: '/api/download'
+    },
+    webApp: 'Deploy web app separately to Netlify or Vercel',
+    documentation: 'See README.md for API usage'
+  });
 });
-
-// Serve static web app if build exists
-const webBuildPath = path.join(__dirname, 'dist');
-if (fs.existsSync(webBuildPath)) {
-  app.use(express.static(webBuildPath));
-  console.log('[Server] ✓ Web app static files enabled');
-} else {
-  console.log('[Server] ⚠ Web app build not found (run "npm run build-web" to enable)');
-}
 
 // Serve RapidAPI video download endpoints (for downloading reels and other videos)
 // Note: Download endpoint now works locally using RAPIDAPI_KEY environment variable

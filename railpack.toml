@@ -2,8 +2,8 @@
 # Tell Railway to use the server as the main entry point
 startCommand = "node server.js"
 
-# Build the web app before starting the server
-buildCommand = "npm run build-web"
+# Skip web build - deploy web app separately to Netlify
+buildCommand = "npm install"
 
 # Specify Node version (Node 20 required for toReversed() method)
 [build.config]
