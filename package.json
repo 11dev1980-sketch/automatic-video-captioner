@@ -13,7 +13,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web --port 6744",
-    "build": "npx expo export --platform web",
+    "build": "echo 'Skipping build for Railway deployment'",
     "prebuild": "expo prebuild && echo \"prebuild complete\"",
     "test": "node node_modules/jest/bin/jest.js",
     "verify-api": "node scripts/verify-api-setup.js",
