@@ -10,8 +10,8 @@ const getApiBaseUrl = () => {
     if (isLocalhost) {
       return 'http://localhost:3001';
     }
-    // Use Railway API for production
-    return 'https://automatic-video-captioner-production.up.railway.app';
+    // Use same domain for production (Railway or self-hosted)
+    return window.location.origin;
   }
   return 'http://localhost:3001';
 };

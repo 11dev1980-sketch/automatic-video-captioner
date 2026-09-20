@@ -12,9 +12,9 @@
 // Tertiary:  /api/media?action=<platform> — Vercel ES module (same RapidAPI stack, different code path)
 // All endpoints use RAPIDAPI_KEY from environment variables.
 
-// Use local API for development, Railway for production
+// Use local API for development, same domain for production (Railway)
 const isLocalhost = typeof window !== 'undefined' && window.location?.hostname === 'localhost';
-const API_BASE = isLocalhost ? 'http://localhost:3001' : 'https://automatic-video-captioner-production.up.railway.app';
+const API_BASE = isLocalhost ? 'http://localhost:3001' : (typeof window !== 'undefined' && window.location?.origin || 'https://automatic-video-captioner-production.up.railway.app');
 
 const LOCAL_DOWNLOAD_URL = `${API_BASE}/api/download/extract`;
 const VERCEL_VIDEO_URL = `${API_BASE}/api/video?action=extract`;

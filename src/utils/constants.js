@@ -5,14 +5,18 @@ export const TRANSCRIBE_ENDPOINT =
     process.env.EXPO_PUBLIC_TRANSCRIBE_ENDPOINT ||
     (typeof window !== 'undefined' && (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1')
         ? 'http://localhost:3001/api/transcribe'  // Local development API server
-        : 'https://automatic-video-captioner-production.up.railway.app/api/transcribe');  // Railway API
+        : (typeof window !== 'undefined' && window.location?.origin
+            ? `${window.location.origin}/api/transcribe`  // Same domain (Railway or self-hosted)
+            : 'https://automatic-video-captioner-production.up.railway.app/api/transcribe'));
 
 // Caption API endpoint for translation
 export const CAPTION_ENDPOINT =
     process.env.EXPO_PUBLIC_CAPTION_ENDPOINT ||
     (typeof window !== 'undefined' && (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1')
         ? 'http://localhost:3001/api/caption'  // Local development API server
-        : 'https://automatic-video-captioner-production.up.railway.app/api/caption');  // Railway API
+        : (typeof window !== 'undefined' && window.location?.origin
+            ? `${window.location.origin}/api/caption`  // Same domain (Railway or self-hosted)
+            : 'https://automatic-video-captioner-production.up.railway.app/api/caption'));
 
 export const POLLINATIONS_API_URL = 'https://image.pollinations.ai/prompt';
 
