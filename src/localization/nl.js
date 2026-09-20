@@ -37,8 +37,8 @@ export const strings = {
 
   // Home screen
   home: {
-    greeting: 'Hoi {0}! 👋',
-    greetingDefault: 'Hoi daar! 👋',
+    greeting: 'Hoi {0}',
+    greetingDefault: 'Hoi',
     welcome: 'Welkom',
     enterName: 'Hoe heet jij?',
     changeName: 'Naam wijzigen',

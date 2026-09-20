@@ -382,7 +382,6 @@ export function CaptionEditorScreenUI({
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={80} color={colors.error} />
                     <Text style={styles.errorTitle}>Video Fout</Text>
-                    <Text style={styles.errorMessage}>{videoError}</Text>
                 </View>
             );
         }
@@ -654,11 +653,6 @@ const styles = StyleSheet.create({
         ...typography.button,
         color: colors.white,
     },
-    errorText: {
-        color: colors.error,
-        fontSize: 14,
-        marginBottom: layout.spacing.sm,
-    },
     
     // Video Preview Styles - full size display
     videoContainer: {
@@ -757,19 +751,6 @@ const styles = StyleSheet.create({
         marginTop: layout.spacing.lg,
         marginBottom: layout.spacing.sm,
         textAlign: 'center',
-    },
-    errorMessage: {
-        ...typography.body,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    errorHint: {
-        ...typography.bodySmall,
-        color: colors.textTertiary,
-        textAlign: 'center',
-        marginTop: layout.spacing.md,
-        fontStyle: 'italic',
     },
     
     // Load Video Button - styled like download button
