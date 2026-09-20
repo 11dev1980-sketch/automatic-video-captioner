@@ -178,12 +178,22 @@ export function VideoLibraryScreen({ navigation }) {
     const handleVideoSelect = (videoId) => {
         const video = videos.find(v => v.id === videoId);
         if (video) {
-            navigation.navigate('VideoPlayer', {
-                videoId: video.id,
-                videoUri: video.uri,
-                videoName: video.filename,
-                duration: video.duration,
-            });
+            // For local videos, navigate to caption editor directly
+            if (video.uri && (video.uri.startsWith('file://') || video.uri.startsWith('content://'))) {
+                navigation.navigate('CaptionEditor', {
+                    reelUrl: video.uri,
+                    fromLibrary: true,
+                    videoId: video.id,
+                });
+            } else {
+                // For other videos, navigate to player
+                navigation.navigate('VideoPlayer', {
+                    videoId: video.id,
+                    videoUri: video.uri,
+                    videoName: video.filename,
+                    duration: video.duration,
+                });
+            }
         }
     };
 

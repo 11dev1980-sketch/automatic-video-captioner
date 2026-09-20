@@ -1,14 +1,15 @@
 /**
  * History Screen - Liquid Glass Design
  * Displays saved transcription results and caption editor projects.
+ * Enhanced to include full caption history with restoration capability.
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '../components/common/PageHeader';
-import { loadResultsHistory } from '../utils/storage';
+import { loadResultsHistory, saveResultsHistory } from '../utils/storage';
 import { strings } from '../localization';
 import { colors } from '../styles/colors';
 import { layout } from '../styles/layout';
@@ -47,6 +48,7 @@ export function HistoryScreen({ isFocused, navigation }) {
         if (!navigation) return;
 
         if (item.type === 'caption_editor') {
+            // Restore full caption editor state
             navigation.navigate('CaptionEditorWorkspace', {
                 videoUri: item.videoUrl,
                 originalVideoUrl: item.originalVideoUrl,
@@ -54,6 +56,10 @@ export function HistoryScreen({ isFocused, navigation }) {
                 title: item.videoName || 'Caption editor',
                 videoId: item.videoId,
                 returnTo: 'History',
+                // Restore caption data
+                captionData: item.captionData,
+                captionStyle: item.captionStyle,
+                processedResults: item.processedResults,
             });
             return;
         }
@@ -64,23 +70,60 @@ export function HistoryScreen({ isFocused, navigation }) {
         });
     };
 
+    const deleteItem = (item) => {
+        Alert.alert(
+            strings.history.deleteConfirm,
+            strings.history.deleteConfirmDesc,
+            [
+                {
+                    text: strings.common.cancel,
+                    style: 'cancel',
+                },
+                {
+                    text: strings.common.delete,
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const updatedHistory = items.filter(i => i.id !== item.id);
+                            await saveResultsHistory(updatedHistory);
+                            setItems(updatedHistory);
+                        } catch (error) {
+                            console.error('HistoryScreen: Error deleting item:', error);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const renderItem = ({ item }) => {
         const isCaptionProject = item.type === 'caption_editor';
-        const title = isCaptionProject
-            ? `Caption editor: ${item.videoName || item.originalVideoUrl || 'Video'}`
-            : item.translatedText?.slice(0, 80) || strings.history.transcriptionResult;
-        const meta = isCaptionProject
-            ? `${item.captionCount || 0} captions`
-            : item.originalUrl ? item.originalUrl.replace(/(^https?:\/\/)|(\/.+$)/g, '') : '';
+        const isCaptionedVideo = item.type === 'captioned_video';
+        
+        let title, meta, icon;
+        
+        if (isCaptionProject) {
+            title = `Caption editor: ${item.videoName || item.originalVideoUrl || 'Video'}`;
+            meta = `${item.captionCount || 0} captions`;
+            icon = 'text';
+        } else if (isCaptionedVideo) {
+            title = item.videoName || 'Captioned Video';
+            meta = `${item.captionCount || 0} captions • ${item.duration || 0}s`;
+            icon = 'videocam';
+        } else {
+            title = item.translatedText?.slice(0, 80) || strings.history.transcriptionResult;
+            meta = item.originalUrl ? item.originalUrl.replace(/(^https?:\/\/)|(\/.+$)/g, '') : '';
+            icon = 'document-text';
+        }
 
         return (
             <TouchableOpacity style={styles.card} onPress={() => openItem(item)} activeOpacity={0.7}>
                 <View style={styles.cardHeader}>
-                    <View style={[styles.iconContainer, isCaptionProject && styles.captionIconContainer]}>
+                    <View style={[styles.iconContainer, (isCaptionProject || isCaptionedVideo) && styles.captionIconContainer]}>
                         <Ionicons
-                            name={isCaptionProject ? 'text' : 'document-text'}
+                            name={icon}
                             size={20}
-                            color={isCaptionProject ? colors.accent : colors.primary}
+                            color={(isCaptionProject || isCaptionedVideo) ? colors.accent : colors.primary}
                         />
                     </View>
                     <View style={styles.cardHeaderText}>
@@ -89,26 +132,41 @@ export function HistoryScreen({ isFocused, navigation }) {
                             {new Date(item.timestamp).toLocaleString()} - {meta}
                         </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+                    <TouchableOpacity 
+                        onPress={() => deleteItem(item)}
+                        style={styles.deleteButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons name="trash-outline" size={20} color={colors.textTertiary} />
+                    </TouchableOpacity>
                 </View>
 
                 {isCaptionProject && (
-                    <View style={styles.duaSection}>
+                    <View style={styles.captionSection}>
                         <Ionicons name="create" size={16} color={colors.accent} />
-                        <Text style={styles.duaText} numberOfLines={2}>
+                        <Text style={styles.captionText} numberOfLines={2}>
                             Saved caption editor project. Opens with your captions and style settings.
                         </Text>
                     </View>
                 )}
 
-                {!isCaptionProject && item.arabicTranscript && (
+                {isCaptionedVideo && (
+                    <View style={styles.captionSection}>
+                        <Ionicons name="videocam" size={16} color={colors.accent} />
+                        <Text style={styles.captionText} numberOfLines={2}>
+                            Captioned video with timestamps and custom styling.
+                        </Text>
+                    </View>
+                )}
+
+                {!isCaptionProject && !isCaptionedVideo && item.arabicTranscript && (
                     <View style={styles.section}>
                         <Text style={styles.sectionLabel}>{strings.history.arabicText}</Text>
                         <Text style={styles.arabicText} numberOfLines={3}>{item.arabicTranscript}</Text>
                     </View>
                 )}
 
-                {!isCaptionProject && item.translatedText && (
+                {!isCaptionProject && !isCaptionedVideo && item.translatedText && (
                     <View style={styles.section}>
                         <Text style={styles.sectionLabel}>{strings.history.translation}</Text>
                         <Text style={styles.bodyText} numberOfLines={3}>{item.translatedText}</Text>
@@ -225,7 +283,7 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         lineHeight: 22,
     },
-    duaSection: {
+    captionSection: {
         flexDirection: 'row',
         marginTop: layout.spacing.md,
         paddingTop: layout.spacing.md,
@@ -233,12 +291,15 @@ const styles = StyleSheet.create({
         borderTopColor: colors.border,
         alignItems: 'flex-start',
     },
-    duaText: {
+    captionText: {
         ...typography.bodySmall,
         color: colors.accent,
         marginLeft: layout.spacing.sm,
         flex: 1,
         fontStyle: 'italic',
+    },
+    deleteButton: {
+        padding: layout.spacing.xs,
     },
     emptyContainer: {
         alignItems: 'center',
