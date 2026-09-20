@@ -298,7 +298,6 @@ import { layout } from '../../styles/layout';
 import { typography } from '../../styles/typography';
 import { globalStyles } from '../../styles/globalStyles';
 import { PageHeader } from '../../components/common/PageHeader';
-import * as Clipboard from 'expo-clipboard';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = require('react-native').Dimensions.get('window');
 
