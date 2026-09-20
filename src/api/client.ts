@@ -27,7 +27,8 @@ function getBaseUrl(): string {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:3001';
     }
-    return window.location.origin;
+    // For production, use Railway API
+    return 'https://automatic-video-captioner-production.up.railway.app';
   }
   // Fallback for dev / SSR
   return 'http://localhost:3001';

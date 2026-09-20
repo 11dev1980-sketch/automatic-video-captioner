@@ -5,8 +5,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-
-const TRANSCRIBE_ENDPOINT = 'http://localhost:3001/api/transcribe';
+import { TRANSCRIBE_ENDPOINT } from '../utils/constants';
 
 /**
  * Transcribe a video from URL (social media or direct link)

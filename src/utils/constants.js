@@ -5,18 +5,14 @@ export const TRANSCRIBE_ENDPOINT =
     process.env.EXPO_PUBLIC_TRANSCRIBE_ENDPOINT ||
     (typeof window !== 'undefined' && (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1')
         ? 'http://localhost:3001/api/transcribe'  // Local development API server
-        : (typeof window !== 'undefined' && window.location?.origin
-            ? `${window.location.origin}/api/transcribe`
-            : 'https://arabic-video-translator.vercel.app/api/transcribe'));
+        : 'https://automatic-video-captioner-production.up.railway.app/api/transcribe');  // Railway API
 
 // Caption API endpoint for translation
 export const CAPTION_ENDPOINT =
     process.env.EXPO_PUBLIC_CAPTION_ENDPOINT ||
     (typeof window !== 'undefined' && (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1')
         ? 'http://localhost:3001/api/caption'  // Local development API server
-        : (typeof window !== 'undefined' && window.location?.origin
-            ? `${window.location.origin}/api/caption`
-            : 'https://arabic-video-translator.vercel.app/api/caption'));
+        : 'https://automatic-video-captioner-production.up.railway.app/api/caption');  // Railway API
 
 export const POLLINATIONS_API_URL = 'https://image.pollinations.ai/prompt';
 
