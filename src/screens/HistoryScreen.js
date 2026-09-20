@@ -1,11 +1,11 @@
 /**
  * History Screen - Liquid Glass Design
  * Displays saved transcription results and caption editor projects.
- * Enhanced to include full caption history with restoration capability.
+ * Enhanced to include full caption history with restoration capability from Google Drive.
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PageHeader } from '../components/common/PageHeader';
@@ -19,16 +19,48 @@ import { globalStyles } from '../styles/globalStyles';
 export function HistoryScreen({ isFocused, navigation }) {
     const [items, setItems] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const loadHistory = React.useCallback(async () => {
         try {
-            const history = await loadResultsHistory();
-            setItems(history || []);
+            setLoading(true);
+            const localHistory = await loadResultsHistory();
+            
+            // Try to load from Google Drive API if available
+            try {
+                const googleDriveHistory = await fetchFromGoogleDrive();
+                const combinedHistory = [...localHistory, ...googleDriveHistory];
+                // Remove duplicates based on ID
+                const uniqueHistory = combinedHistory.filter((item, index, self) =>
+                    index === self.findIndex((t) => t.id === item.id)
+                );
+                setItems(uniqueHistory);
+            } catch (driveError) {
+                console.log('HistoryScreen: Google Drive not available, using local only:', driveError.message);
+                setItems(localHistory || []);
+            }
         } catch (error) {
             console.error('HistoryScreen: Error loading history:', error);
             setItems([]);
+        } finally {
+            setLoading(false);
         }
     }, []);
+
+    const fetchFromGoogleDrive = async () => {
+        try {
+            const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${apiUrl}/api/drive/history`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.history || [];
+            }
+            return [];
+        } catch (error) {
+            console.log('HistoryScreen: Google Drive not available, using local only:', error.message);
+            return [];
+        }
+    };
 
     useEffect(() => {
         loadHistory();
@@ -47,7 +79,7 @@ export function HistoryScreen({ isFocused, navigation }) {
     const openItem = (item) => {
         if (!navigation) return;
 
-        if (item.type === 'caption_editor') {
+        if (item.type === 'caption_editor' || item.type === 'captioned_video') {
             // Restore full caption editor state
             navigation.navigate('CaptionEditorWorkspace', {
                 videoUri: item.videoUrl,
@@ -84,6 +116,19 @@ export function HistoryScreen({ isFocused, navigation }) {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            // Try to delete from Google Drive if it's a Drive item
+                            if (item.driveFileId) {
+                                try {
+                                    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+                                    await fetch(`${apiUrl}/api/drive/delete/${item.driveFileId}`, {
+                                        method: 'DELETE',
+                                    });
+                                } catch (driveError) {
+                                    console.error('Failed to delete from Drive:', driveError);
+                                }
+                            }
+                            
+                            // Delete from local storage
                             const updatedHistory = items.filter(i => i.id !== item.id);
                             await saveResultsHistory(updatedHistory);
                             setItems(updatedHistory);
@@ -108,7 +153,7 @@ export function HistoryScreen({ isFocused, navigation }) {
             icon = 'text';
         } else if (isCaptionedVideo) {
             title = item.videoName || 'Captioned Video';
-            meta = `${item.captionCount || 0} captions • ${item.duration || 0}s`;
+            meta = `${item.captionCount || 0} captions • ${item.totalDuration || 0}s`;
             icon = 'videocam';
         } else {
             title = item.translatedText?.slice(0, 80) || strings.history.transcriptionResult;
@@ -183,17 +228,26 @@ export function HistoryScreen({ isFocused, navigation }) {
                     <PageHeader title={strings.history.title} subtitle={strings.history.subtitle} />
                 </View>
 
+                {loading && (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={styles.loadingText}>History laden...</Text>
+                    </View>
+                )}
+
                 <FlatList
                     data={items}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     contentContainerStyle={{ ...styles.listContent, paddingBottom: 120 }}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="albums-outline" size={64} color={colors.textTertiary} />
-                            <Text style={styles.emptyText}>{strings.history.empty}</Text>
-                            <Text style={styles.emptySubtext}>{strings.history.emptyDesc}</Text>
-                        </View>
+                        !loading ? (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="albums-outline" size={64} color={colors.textTertiary} />
+                                <Text style={styles.emptyText}>{strings.history.empty}</Text>
+                                <Text style={styles.emptySubtext}>{strings.history.emptyDesc}</Text>
+                            </View>
+                        ) : null
                     }
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
@@ -317,5 +371,16 @@ const styles = StyleSheet.create({
         ...typography.body,
         color: colors.textTertiary,
         textAlign: 'center',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: layout.spacing.xxl * 2,
+    },
+    loadingText: {
+        ...typography.body,
+        color: colors.textSecondary,
+        marginTop: layout.spacing.md,
     },
 });

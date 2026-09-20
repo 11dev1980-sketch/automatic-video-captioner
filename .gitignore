@@ -37,6 +37,10 @@ yarn-error.*
 .env.test.local
 .env.production.local
 
+# Secrets folder - NEVER COMMIT THIS!
+secrets/
+!secrets/.gitkeep
+
 # Google Service Account Key - NEVER COMMIT THIS!
 service-account-key.json
 

@@ -2,6 +2,7 @@
  * Google Drive Service
  * Handles file upload and management using Google Drive API
  * Uses service account for server-side operations
+ * Enhanced for caption history storage and retrieval
  */
 
 const { google } = require('googleapis');
@@ -10,7 +11,7 @@ const path = require('path');
 
 // Initialize Google Drive API
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
-const DRIVE_FOLDER_NAME = 'AVT Video Uploads';
+const DRIVE_FOLDER_NAME = 'Automatic Video Captioner';
 
 let drive = null;
 
@@ -27,7 +28,7 @@ function initializeDrive() {
       return null;
     }
 
-    const keyFile = path.resolve(__dirname, '../../', keyPath);
+    const keyFile = path.resolve(process.cwd(), keyPath);
     
     if (!fs.existsSync(keyFile)) {
       console.error('[GOOGLE_DRIVE] Service account key file not found:', keyFile);
@@ -49,10 +50,18 @@ function initializeDrive() {
 }
 
 /**
- * Get or create the uploads folder
+ * Get the uploads folder ID from environment or create it
  */
-async function getOrCreateUploadsFolder() {
+async function getUploadsFolderId() {
   try {
+    // Check if folder ID is provided in environment
+    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+    if (folderId) {
+      console.log('[GOOGLE_DRIVE] Using folder ID from environment:', folderId);
+      return folderId;
+    }
+
+    // Fallback to searching for or creating folder
     if (!drive) {
       drive = initializeDrive();
       if (!drive) throw new Error('Drive not initialized');
@@ -81,7 +90,7 @@ async function getOrCreateUploadsFolder() {
     console.log('[GOOGLE_DRIVE] Created new folder:', folder.data.id);
     return folder.data.id;
   } catch (error) {
-    console.error('[GOOGLE_DRIVE] Folder creation failed:', error);
+    console.error('[GOOGLE_DRIVE] Folder lookup failed:', error);
     throw error;
   }
 }
@@ -102,8 +111,8 @@ async function uploadFile(fileBuffer, fileName, mimeType = 'video/mp4') {
 
     console.log('[GOOGLE_DRIVE] Uploading file:', fileName, 'Size:', fileBuffer.length);
 
-    // Get or create uploads folder
-    const folderId = await getOrCreateUploadsFolder();
+    // Get uploads folder ID
+    const folderId = await getUploadsFolderId();
 
     // Generate unique filename
     const timestamp = Date.now();
@@ -146,6 +155,121 @@ async function uploadFile(fileBuffer, fileName, mimeType = 'video/mp4') {
   } catch (error) {
     console.error('[GOOGLE_DRIVE] Upload failed:', error);
     throw new Error(`Google Drive upload failed: ${error.message}`);
+  }
+}
+
+/**
+ * Save caption metadata to Google Drive
+ * @param {Object} captionData - Caption data including text, timestamps, styles
+ * @param {string} videoId - Video identifier
+ * @param {string} videoName - Video name
+ * @returns {Promise<Object>} - Saved metadata info
+ */
+async function saveCaptionMetadata(captionData, videoId, videoName) {
+  try {
+    if (!drive) {
+      drive = initializeDrive();
+      if (!drive) throw new Error('Drive not initialized');
+    }
+
+    const folderId = await getUploadsFolderId();
+    
+    // Create metadata file
+    const metadata = {
+      videoId,
+      videoName,
+      timestamp: Date.now(),
+      captionData: {
+        captions: captionData.captions || [],
+        style: captionData.style || {},
+        totalDuration: captionData.totalDuration || 0,
+      },
+    };
+
+    const metadataFileName = `caption_${videoId}_${Date.now()}.json`;
+    const metadataContent = JSON.stringify(metadata, null, 2);
+
+    // Upload metadata as a JSON file
+    const file = await drive.files.create({
+      resource: {
+        name: metadataFileName,
+        parents: [folderId],
+        mimeType: 'application/json',
+      },
+      media: {
+        mimeType: 'application/json',
+        body: metadataContent,
+      },
+      fields: 'id, name, webViewLink, webContentLink',
+    });
+
+    console.log('[GOOGLE_DRIVE] Caption metadata saved:', file.data.id);
+
+    return {
+      success: true,
+      fileId: file.data.id,
+      fileName: metadataFileName,
+    };
+  } catch (error) {
+    console.error('[GOOGLE_DRIVE] Metadata save failed:', error);
+    throw new Error(`Google Drive metadata save failed: ${error.message}`);
+  }
+}
+
+/**
+ * Retrieve caption history from Google Drive
+ * @returns {Promise<Array>} - Array of caption history items
+ */
+async function getCaptionHistory() {
+  try {
+    if (!drive) {
+      drive = initializeDrive();
+      if (!drive) throw new Error('Drive not initialized');
+    }
+
+    const folderId = await getUploadsFolderId();
+
+    // List all JSON files in the folder
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType='application/json' and trashed=false`,
+      fields: 'files(id, name, createdTime, webContentLink)',
+    });
+
+    const historyItems = [];
+
+    for (const file of response.data.files || []) {
+      try {
+        // Download and parse metadata
+        const content = await drive.files.get({
+          fileId: file.id,
+          alt: 'media',
+        });
+
+        const metadata = JSON.parse(content.data);
+        
+        if (metadata.captionData) {
+          historyItems.push({
+            id: file.id,
+            videoId: metadata.videoId,
+            videoName: metadata.videoName,
+            timestamp: metadata.timestamp,
+            captionData: metadata.captionData,
+            type: 'captioned_video',
+          });
+        }
+      } catch (parseError) {
+        console.error('[GOOGLE_DRIVE] Failed to parse metadata file:', file.name, parseError);
+      }
+    }
+
+    // Sort by timestamp (newest first)
+    historyItems.sort((a, b) => b.timestamp - a.timestamp);
+
+    console.log('[GOOGLE_DRIVE] Retrieved caption history:', historyItems.length, 'items');
+    return historyItems;
+  } catch (error) {
+    console.error('[GOOGLE_DRIVE] History retrieval failed:', error);
+    throw new Error(`Google Drive history retrieval failed: ${error.message}`);
   }
 }
 
@@ -198,6 +322,8 @@ async function getFileInfo(fileId) {
 module.exports = {
   initializeDrive,
   uploadFile,
+  saveCaptionMetadata,
+  getCaptionHistory,
   deleteFile,
   getFileInfo,
 };

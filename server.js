@@ -4,11 +4,19 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 
-// Load environment variables from .env, fallback to .env.example
+// Load environment variables from secrets/.env, fallback to secrets/.env.example, then .env, then .env.example
+const secretsEnvPath = path.resolve(process.cwd(), 'secrets/.env');
+const secretsEnvExamplePath = path.resolve(process.cwd(), 'secrets/.env.example');
 const envPath = path.resolve(process.cwd(), '.env');
 const envExamplePath = path.resolve(process.cwd(), '.env.example');
 
-if (fs.existsSync(envPath)) {
+if (fs.existsSync(secretsEnvPath)) {
+  dotenv.config({ path: secretsEnvPath });
+  console.log('[Server] ✓ Loaded secrets/.env (local development)');
+} else if (fs.existsSync(secretsEnvExamplePath)) {
+  dotenv.config({ path: secretsEnvExamplePath });
+  console.log('[Server] ✓ Loaded secrets/.env.example (fallback)');
+} else if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
   console.log('[Server] ✓ Loaded .env (local development)');
 } else if (fs.existsSync(envExamplePath)) {
@@ -29,15 +37,18 @@ app.use(express.json());
 const transcribeHandler = require('./api/transcribe');
 const captionHandler = require('./api/caption');
 const downloadHandler = require('./api/download');
+const driveHandler = require('./api/drive');
 
 console.log('[Server] Transcribe handler type:', typeof transcribeHandler);
 console.log('[Server] Caption handler type:', typeof captionHandler);
 console.log('[Server] Download handler type:', typeof downloadHandler);
+console.log('[Server] Drive handler type:', typeof driveHandler);
 
 // Directly mount the routers
 app.use('/api/transcribe', transcribeHandler);
 app.use('/api/caption', captionHandler);
 app.use('/api/download', downloadHandler);
+app.use('/api/drive', driveHandler);
 
 // Root route - API info
 app.get('/', (req, res) => {
@@ -48,7 +59,8 @@ app.get('/', (req, res) => {
     endpoints: {
       transcribe: '/api/transcribe',
       caption: '/api/caption',
-      download: '/api/download'
+      download: '/api/download',
+      drive: '/api/drive'
     },
     webApp: 'Deploy web app separately to Netlify or Vercel',
     documentation: 'See README.md for API usage'
